@@ -85,7 +85,8 @@
 
 		$list: null,
 
-		_compiledTemplate: null,
+		_compiledSiteTemplate: null,
+		_compiledIconTemplate: null,
 
 		init: function() {
 			var self = this;
@@ -94,7 +95,7 @@
 			$('#add_external_site').click(function(e) {
 				e.preventDefault();
 
-				var $el = $(self._compiledTemplate({
+				var $el = $(self._compiledSiteTemplate({
 					id: 'new-' + Date.now(),
 					name: t('external', 'New site'),
 					icon: 'external.svg',
@@ -106,7 +107,8 @@
 				$el.find('.options').removeClass('hidden');
 				self.$list.append($el);
 			});
-			this._compiledTemplate = Handlebars.compile($('#site-template').html());
+			this._compiledSiteTemplate = Handlebars.compile($('#site-template').html());
+			this._compiledIconTemplate = Handlebars.compile($('#icon-template').html());
 
 			this.load();
 		},
@@ -132,7 +134,7 @@
 					self.availableDevices = response.ocs.data.devices;
 
 					if (response.ocs.data.sites.length === 0) {
-						var $el = $(self._compiledTemplate({
+						var $el = $(self._compiledSiteTemplate({
 							id: 'undefined'
 						}));
 						self._attachEvents($el);
@@ -148,7 +150,7 @@
 			var self = this;
 
 			_.each(this._sites.models, function(site) {
-				var $el = $(self._compiledTemplate(site.attributes));
+				var $el = $(self._compiledSiteTemplate(site.attributes));
 				self._attachEvents($el);
 				self.$list.append($el);
 			});
@@ -244,7 +246,8 @@
 		},
 
 		_buildIconList: function(data) {
-			var $table = $('ul.icon-list'),
+			var self = this,
+				$table = $('ul.icon-list'),
 				lastIcon = '',
 				$lastIcon = null,
 				icons = [];
@@ -258,7 +261,7 @@
 
 				if (lastIcon !== '' && data.name === lastIcon.replace('-dark.', '.')) {
 					$lastIcon.find('div.img').prepend($('<img>').attr('src', data.url));
-					$lastIcon.find('span').prepend(data.name + ' / ');
+					$lastIcon.find('span.name').prepend(data.name + ' / ');
 					$lastIcon.addClass('twin-icons');
 
 					icons.pop();
@@ -269,9 +272,8 @@
 				}
 
 
-				var $row = $('<li>');
-				$row.append($('<div>').addClass('img').append($('<img>').attr('src', data.url)));
-				$row.append($('<span>').text(data.name));
+				var $row = $(self._compiledIconTemplate(data));
+				self._attachEventsIcon($row);
 				$table.append($row);
 				icons.push(data);
 
@@ -280,6 +282,28 @@
 			});
 
 			this.availableIcons = icons;
+		},
+
+		_attachEventsIcon: function($icon) {
+			$icon.find('span.icon-delete').click(_.bind(this._deleteIcon, this));
+		},
+
+		_deleteIcon: function(e) {
+			var $row = $(e.currentTarget).parents('li'),
+				icon = $row.attr('data-icon');
+
+			$.ajax({
+				type: 'DELETE',
+				url: OC.generateUrl('/apps/external/icons/' + icon)
+			}).done(function () {
+				$row.slideUp();
+				setTimeout(function() {
+					$row.remove();
+				}, 750);
+
+			});
+			console.log($row);
+			console.log(icon);
 		},
 
 		_rebuildNavigation: function() {
