@@ -123,10 +123,6 @@
 				success: function(_, response) {
 					$('#loading_sites').addClass('hidden');
 
-					_.each(response.ocs.data.icons, function(icon) {
-						console.log('icon');
-					});
-
 					self.availableIcons = response.ocs.data.icons;
 					self._buildIconList(response.ocs.data.icons);
 					self.availableLanguages = response.ocs.data.languages;
@@ -300,10 +296,7 @@
 				setTimeout(function() {
 					$row.remove();
 				}, 750);
-
 			});
-			console.log($row);
-			console.log(icon);
 		},
 
 		_rebuildNavigation: function() {
@@ -408,10 +401,14 @@ $(document).ready(function(){
 			$('label#uploadlogo').addClass('icon-upload').removeClass('icon-loading-small');
 		},
 		fail: function (e, result) {
-			OC.msg.finishedError('form.uploadButton span.msg', result.jqXHR.responseJSON.error);
+			if (_.isUndefined(result.jqXHR.responseJSON.data.message)) {
+				OC.msg.finishedError('form.uploadButton span.msg', t('external', 'Icon could not be uploaded'));
+			} else {
+				OC.msg.finishedError('form.uploadButton span.msg', result.jqXHR.responseJSON.data.message);
+			}
 			$('label#uploadlogo').addClass('icon-upload').removeClass('icon-loading-small');
 		}
 	};
 
-	$('#uploadlogo').fileupload(uploadParamsLogo);
+	$('#uploadicon').fileupload(uploadParamsLogo);
 });
